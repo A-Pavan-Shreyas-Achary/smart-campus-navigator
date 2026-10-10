@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusPath | Smart Campus Navigator</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="brand-icon">↗</span>
+      <span>Campus<span class="brand-accent">Path</span><small>SMART CAMPUS NAVIGATOR</small></span>
+    </a>
+    <span class="status"><span class="status-dot"></span> Demo campus map</span>
+  </header>
+
+  <main class="page">
+    <section class="intro">
+      <p class="eyebrow">FIND YOUR WAY</p>
+      <h1>Your campus.<br><span>One smart route.</span></h1>
+      <p class="intro-copy">Choose where you are and where you want to go. We'll calculate the shortest route using Dijkstra's algorithm.</p>
+    </section>
+
+    <section class="workspace">
+      <aside class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">ROUTE PLANNER</p>
+            <h2>Plan your journey</h2>
+          </div>
+          <span class="compass">⌖</span>
+        </div>
+
+        <label for="start">Starting point</label>
+        <div class="select-wrap"><span class="select-dot start-dot"></span>
+          <select id="start">
+            {% for building in buildings %}
+            <option value="{{ building }}" {% if loop.first %}selected{% endif %}>{{ building }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <button id="swap" class="swap-button" type="button" aria-label="Swap start and destination">↕ Swap locations</button>
+
+        <label for="destination">Destination</label>
+        <div class="select-wrap"><span class="select-dot end-dot"></span>
+          <select id="destination">
+            {% for building in buildings %}
+            <option value="{{ building }}" {% if loop.index == 6 %}selected{% endif %}>{{ building }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <button id="find-route" class="primary-button" type="button">Find shortest route <span>→</span></button>
+        <p id="message" class="message" role="status">Select your locations and find a route.</p>
+
+        <div id="route-result" class="route-result" hidden>
+          <div class="result-stats">
+            <div><span class="stat-label">TOTAL DISTANCE</span><strong id="distance">—</strong></div>
+            <div><span class="stat-label">STOPS</span><strong id="stops">—</strong></div>
+          </div>
+          <h3>Route directions</h3>
+          <ol id="directions" class="directions"></ol>
+        </div>
+
+        <div class="legend">
+          <span><i class="legend-line"></i> Campus paths</span>
+          <span><i class="legend-line route-legend"></i> Shortest route</span>
+        </div>
+      </aside>
+
+      <section class="map-panel">
+        <div class="map-heading">
+          <div><p class="eyebrow">CAMPUS OVERVIEW</p><h2>Explore the map</h2></div>
+          <span class="map-tag">6 LOCATIONS</span>
+        </div>
+
+        <div class="map-canvas" id="map-canvas">
+          <div class="map-texture"></div>
+          <svg id="path-layer" class="path-layer" viewBox="0 0 100 70" preserveAspectRatio="none" aria-label="Campus walking paths">
+            {% for building, neighbours in campus.items() %}
+              {% for neighbour, weight in neighbours.items() %}
+                {% if building < neighbour %}
+                <line class="campus-edge" data-a="{{ building }}" data-b="{{ neighbour }}"
+                  x1="{{ positions[building][0] }}" y1="{{ positions[building][1] }}"
+                  x2="{{ positions[neighbour][0] }}" y2="{{ positions[neighbour][1] }}"></line>
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+            <g id="route-lines"></g>
+          </svg>
+
+          <div class="park park-one">GREEN COURT</div>
+          <div class="park park-two">CAMPUS GARDEN</div>
+
+          {% for building in buildings %}
+          <button class="building" type="button" data-building="{{ building }}"
+            style="left: {{ positions[building][0] }}%; top: {{ positions[building][1] }}%;"
+            aria-label="Select {{ building }}">
+            <span class="building-icon">
+              {% if building == "Main Gate" %}⌂
+              {% elif building == "Library" %}▤
+              {% elif building == "CSE Block" %}⌘
+              {% elif building == "Canteen" %}♨
+              {% elif building == "Auditorium" %}▣
+              {% else %}▦{% endif %}
+            </span>
+            <span class="building-label">{{ building }}</span>
+          </button>
+          {% endfor %}
+          <div class="north-indicator">N <span>↑</span></div>
+          <div class="map-note">ILLUSTRATIVE MAP · DISTANCES ARE SAMPLE DATA</div>
+        </div>
+        <p class="map-help">Tip: tap any building marker to set it as your destination.</p>
+      </section>
+    </section>
+
+    <section class="feature-row">
+      <article><span class="feature-icon">⌘</span><div><h3>Graph-powered</h3><p>Buildings are vertices, paths are weighted edges.</p></div></article>
+      <article><span class="feature-icon">↗</span><div><h3>Shortest path</h3><p>A min-heap helps Dijkstra explore nearby nodes first.</p></div></article>
+      <article><span class="feature-icon">⌁</span><div><h3>Built with Python</h3><p>Flask connects the interactive UI to your algorithm.</p></div></article>
+    </section>
+
+    <footer>BUILT WITH PYTHON + DIJKSTRA'S ALGORITHM <span>Student portfolio project</span></footer>
+  </main>
+
+  <script>
+    window.CAMPUS_POSITIONS = {{ positions | tojson }};
+    window.CAMPUS_EDGES = {{ campus | tojson }};
+  </script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
